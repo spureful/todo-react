@@ -1,24 +1,73 @@
-import logo from './logo.svg';
-import './App.css';
+import React, {useEffect} from 'react';
+import ToDoList from './components/ToDoList';
+import Context from './context';
+import Loader from './components/Loader';
 
+const AddToDo = React.lazy(() => import('./components/AddToDo'));
 function App() {
+  const [todos, setTodos] = React.useState([]);
+  const [loader, setLoader] = React.useState(true);
+
+  useEffect(() => {
+   
+    fetch('https://jsonplaceholder.typicode.com/todos?_limit=10')
+    .then(response => response.json())
+    .then(json => {
+      setTimeout(() => {
+        setTodos(json)
+        setLoader(false)
+      }, 2000)
+    })
+   }, []
+  )
+  
+  function toggleTodo(id) {
+    setTodos(
+      todos.map(todo => {
+        if (todo.id === id) {
+          todo.completed = !todo.completed;
+        }
+        return todo;
+      })
+    ) 
+ }
+
+
+ function addToDo(title) {
+  setTodos(
+    todos.concat([{
+      id: Date.now(),
+      completed: false,
+      title
+    }])
+  )
+ }
+
+  function removeToDo(id) {
+    setTodos(
+      todos.filter(x => x.id !== id)
+    )
+  }
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Context.Provider value={{removeToDo}}>
+      <div className="wrapper">
+        <h1> to do list</h1>
+        <div className="addWrap"  style={{'marginBottom': '15px'}}>
+          <React.Suspense fallback={<Loader/>}>
+          <AddToDo addToDo={addToDo}/>
+          </React.Suspense>
+      
+          { loader && <Loader/>}
+        </div>
+   
+        {
+           todos.length ?
+            <ToDoList todos={todos} toggleTodo={toggleTodo}/>
+            : loader ? null : <div> Список пуст </div>        
+        }
+
+      </div>
+    </Context.Provider>   
   );
 }
 
